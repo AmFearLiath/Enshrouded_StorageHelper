@@ -67,7 +67,6 @@ python updater.py
 ```
 
 * Das Fenster öffnet sich und du kannst die FTP-Zugangsdaten sowie weitere Einstellungen konfigurieren.
-* Unten rechts findest du „© Liath“ als Copyright-Hinweis.
 * Im Menü kannst du Sprache (Deutsch/Englisch) sowie Dark Mode wechseln.
 * Über Import/Export kannst du Einstellungen als Datei oder QR-Code sichern und laden.
 * Nach Konfiguration kannst du den Updater starten, der dann in festgelegten Intervallen automatisch deine Savegame-Daten synchronisiert.
