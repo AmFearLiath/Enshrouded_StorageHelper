@@ -1,31 +1,36 @@
-# updater/core/logger.py
+# core/logger.py
 
 import logging
-import os
+import sys
+from datetime import datetime
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), '..', 'logs')
-LOG_FILE = os.path.join(LOG_DIR, 'updater.log')
+class Logger:
+    """
+    Logger-Klasse zur zentralen Protokollierung.
+    Unterstützt verschiedene Level: INFO, WARNING, ERROR.
+    """
 
-os.makedirs(LOG_DIR, exist_ok=True)
+    def __init__(self, log_file: str = None, level=logging.INFO):
+        self.logger = logging.getLogger("UpdaterLogger")
+        self.logger.setLevel(level)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-def setup_logger(level: str = "INFO") -> logging.Logger:
-    """Initialisiert das Logger-Objekt mit gewünschtem Level und Ausgabe in Datei + Konsole."""
-    logger = logging.getLogger("UpdaterLogger")
-    logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+        # Konsolenausgabe
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
 
-    # Bestehende Handler entfernen (bei Neuladen in GUI)
-    if logger.hasHandlers():
-        logger.handlers.clear()
+        # Optional: Datei-Logging
+        if log_file:
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
 
-    # Datei-Handler
-    file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
-    file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+    def log_info(self, message: str):
+        self.logger.info(message)
 
-    # Stream-Handler (Konsole)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
+    def log_warning(self, message: str):
+        self.logger.warning(message)
 
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-
-    return logger
+    def log_error(self, message: str):
+        self.logger.error(message)

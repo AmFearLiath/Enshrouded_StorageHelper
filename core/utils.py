@@ -1,69 +1,45 @@
+# core/utils.py
+
 import os
-import json
-from pathlib import Path
+import datetime
 
-
-def get_base_path():
+def ensure_dir_exists(path: str) -> None:
     """
-    Gibt den Basisordner zurück, in dem das Script liegt.
+    Erstellt das Verzeichnis, falls es nicht existiert.
+    
+    Args:
+        path (str): Pfad zum Verzeichnis.
     """
-    return Path(__file__).resolve().parent.parent
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-
-def get_default_config_path():
+def format_timestamp(ts: float = None, fmt: str = "%Y-%m-%d_%H-%M-%S") -> str:
     """
-    Gibt den Pfad zur Standard-Konfigurationsdatei zurück.
+    Formatiert einen Zeitstempel in lesbare Form.
+    
+    Args:
+        ts (float, optional): Zeitstempel als Unix-Timestamp. Standard: jetzt.
+        fmt (str, optional): Format-String für strftime.
+        
+    Returns:
+        str: Formatierter Zeitstring.
     """
-    return get_base_path() / "config.json"
+    if ts is None:
+        ts = datetime.datetime.now().timestamp()
+    return datetime.datetime.fromtimestamp(ts).strftime(fmt)
 
-
-def ensure_dir_exists(directory):
+def validate_time_format(time_str: str) -> bool:
     """
-    Erstellt ein Verzeichnis, wenn es nicht existiert.
-    """
-    os.makedirs(directory, exist_ok=True)
-
-
-def is_valid_json(file_path):
-    """
-    Prüft, ob die angegebene Datei eine gültige JSON-Datei ist.
+    Validiert, ob ein String das Format HH:MM hat.
+    
+    Args:
+        time_str (str): Zeitstring.
+        
+    Returns:
+        bool: True wenn korrektes Format, sonst False.
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            json.load(f)
+        datetime.datetime.strptime(time_str, "%H:%M")
         return True
-    except (json.JSONDecodeError, FileNotFoundError, PermissionError):
+    except ValueError:
         return False
-
-
-def load_json(file_path):
-    """
-    Lädt und gibt eine JSON-Datei als dict zurück.
-    """
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-def save_json(file_path, data):
-    """
-    Speichert ein Dictionary als JSON-Datei.
-    """
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-def get_temp_directory():
-    """
-    Gibt das Standard-Temp-Verzeichnis zurück.
-    """
-    tmp_path = get_base_path() / "tmp"
-    ensure_dir_exists(tmp_path)
-    return tmp_path
-
-
-def is_windows():
-    return os.name == 'nt'
-
-
-def is_linux():
-    return os.name == 'posix'

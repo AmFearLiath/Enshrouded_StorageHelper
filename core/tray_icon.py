@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt6.QtGui import QIcon, QAction, QCursor
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from PyQt6.QtCore import Qt, QObject, pyqtSignal
@@ -10,10 +11,22 @@ class TrayIcon(QObject):
     def __init__(self, app, icon_path, parent=None):
         super().__init__(parent)
         self.app = app
+
+        # Pfadbasis setzen
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Tray Icon initialisieren
+        icon_path = self._get_icon_path(icon_path)
+        if not os.path.exists(icon_path):
+            print(f"[WARN] Tray-Icon-Datei nicht gefunden: {icon_path}")
         self.tray_icon = QSystemTrayIcon(QIcon(icon_path), parent)
+
+        # Optional: Icon auch für App setzen
+        self.app.setWindowIcon(QIcon(icon_path))
+
         self.menu = QMenu()
 
-        # Menüeinträge
+        # Menüeinträge (später evtl. übersetzbar machen)
         self.action_toggle = QAction("Show/Hide")
         self.action_quit = QAction("Exit")
 
@@ -31,8 +44,16 @@ class TrayIcon(QObject):
 
         self.tray_icon.show()
 
+    def _get_icon_path(self, relative_path):
+        """
+        Liefert einen gültigen Icon-Pfad relativ zur Skriptbasis.
+        """
+        return os.path.abspath(os.path.join(self.base_dir, '..', relative_path))
+
     def on_activated(self, reason):
-        # Linksklick zeigt/verbirgt das Fenster
+        """
+        Linksklick auf das Tray-Icon zeigt/verbirgt die Anwendung.
+        """
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.toggle_visibility.emit()
 
@@ -46,7 +67,11 @@ class TrayIcon(QObject):
             'stopped': 'assets/icons/tray_stopped.png',
             'error': 'assets/icons/tray_error.png'
         }
-        icon_path = icons.get(status, 'assets/icons/tray_stopped.png')
+        icon_path = self._get_icon_path(icons.get(status, 'assets/icons/tray_stopped.png'))
+
+        if not os.path.exists(icon_path):
+            print(f"[WARN] Status-Icon-Datei nicht gefunden: {icon_path}")
+
         self.tray_icon.setIcon(QIcon(icon_path))
         self.tray_icon.setToolTip(f"Updater Status: {status.capitalize()}")
 

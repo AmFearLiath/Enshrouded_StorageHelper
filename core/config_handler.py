@@ -1,56 +1,87 @@
-# updater/core/config_handler.py
+"""
+core/config_handler.py
+
+Konfigurationsmanagement:
+- Laden und Speichern der Einstellungen als JSON-Datei
+- Default-Werte und Validierung
+- Unterstützung für Import/Export (z.B. auch für QR-Code-Export)
+"""
 
 import json
 import os
+from typing import Optional, Dict, Any
 
-DEFAULT_CONFIG = {
-    "ftp_host": "",
-    "ftp_port": 21,
-    "ftp_user": "",
-    "ftp_pass": "",
-    "remote_path": "",
-    "interval": 30,
-    "start_times": [],
-    "temp_dir": "tmp",
-    "target_dir": ".",
-    "log_level": "INFO",
-    "create_backup": True,
-    "auto_update": False,
-    "github_url": "https://example.com/default-repo",
-    "email_notify": "",
-    "smtp_server": "",
-    "smtp_user": "",
-    "smtp_pass": "",
-    "smtp_port": 587
-}
+class ConfigHandler:
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.config = {}
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+    def _default_config(self) -> Dict[str, Any]:
+        return {
+            "ftp": {
+                "host": "",
+                "port": 21,
+                "username": "",
+                "password": "",
+                "remote_path": "",
+            },
+            "local": {
+                "install_dir": "",
+                "temp_dir": "",
+            },
+            "smtp": {
+                "enabled": False,
+                "smtp_server": "",
+                "smtp_port": 587,
+                "username": "",
+                "password": "",
+                "sender_email": "",
+                "recipient_email": "",
+                "use_tls": True,
+            },
+            "logging": {
+                "level": "INFO",
+            },
+            "update": {
+                "auto_check": True,
+                "repo_owner": "",
+                "repo_name": "",
+                "current_version": "",
+            },
+            "ui": {
+                "language": "de",
+                "dark_mode": True,
+            },
+            "backup": {
+                "enabled": True,
+                "backup_dir": "",
+            }
+        }
 
-
-def load_config():
-    """Lädt die Konfiguration von der Festplatte, falls vorhanden. Ansonsten wird DEFAULT verwendet."""
-    if os.path.exists(CONFIG_FILE):
+    def load(self) -> dict:
+        if not os.path.isfile(self.filepath):
+            return {}
         try:
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                return {**DEFAULT_CONFIG, **data}
-        except Exception as e:
-            print(f"[Config] Fehler beim Laden: {e}")
-            return DEFAULT_CONFIG.copy()
-    return DEFAULT_CONFIG.copy()
+            with open(self.filepath, "r", encoding="utf-8") as f:
+                self.config = json.load(f)
+            return self.config
+        except (json.JSONDecodeError, IOError):
+            return {}
 
+    def save(self, config: dict) -> bool:
+        try:
+            # Sicherstellen, dass Verzeichnis existiert
+            ensure_dir_exists(os.path.dirname(self.filepath))
+            with open(self.filepath, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4)
+            self.config = config
+            return True
+        except IOError:
+            return False
 
-def save_config(config: dict):
-    """Speichert die übergebene Konfiguration."""
-    try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as file:
-            json.dump(config, file, indent=4, ensure_ascii=False)
-        return True
-    except Exception as e:
-        print(f"[Config] Fehler beim Speichern: {e}")
-        return False
+    def get(self, key: str, default=None):
+        return self.config.get(key, default)
 
-
-def get_default_config():
-    """Liefert eine neue Kopie der Standardkonfiguration zurück."""
-    return DEFAULT_CONFIG.copy()
+    def set(self, key: str, value):
+        self.config[key] = value
+        self.save(self.config)
